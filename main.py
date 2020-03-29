@@ -2,7 +2,11 @@ import ntptime
 import ujson
 import utime
 import config
+import machine
+import gc
+import esp32
 from machine import UART, I2C, Pin
+from letters import characters
 
 from third_party import string
 from third_party import rsa
@@ -13,20 +17,12 @@ from uPySensors.psma003 import psma003
 from uPySensors.bme680 import BME680
 import neopixel
 
-device_pins = {
-    'set':25,
-    'rst':21,
-    'rx':23,
-    'tx':33,
-    'scl':22,
-    'sda':19,
-}   
-
+np = neopixel.NeoPixel(Pin(27), 25)
 device_uart = UART(1, baudrate=9600)
 device_i2c = -1
 
-bme_sensor = BME680(device_i2c, device_pins)
-psm_sensor = psma003(device_uart, device_pins)
+bme_sensor = BME680(device_i2c, config.device_config)
+psm_sensor = psma003(device_uart, config.device_config)
 
 def on_message(topic, message):
     print((topic,message))
@@ -68,43 +64,70 @@ def get_mqtt_client(project_id, cloud_region, registry_id, device_id, jwt):
     client.subscribe('/devices/{}/commands/#'.format(device_id), 1)
     return client
 
+def write_2leds(letter, color):
+    rgb = color
+    char_matrix = characters.get(letter)
+    led_counter = 0
+    for row in char_matrix:
+        for led in row:
+            if(led):
+                np[led_counter] = rgb
+            else:
+                np[led_counter] = (0, 0, 0)
+            led_counter += 1
+    np.write()
+
 # sensor connection
+write_2leds(".", (0, 0, 5))
 bme_sensor.set_gas_heater_profile(320, 120, 0)
 psm_sensor.wake_up()
 
 # cloud connection
-#jwt = create_jwt(config.google_cloud_config['project_id'], config.jwt_config['private_key'], config.jwt_config['algorithm'], config.jwt_config['token_ttl'])
-#client = get_mqtt_client(config.google_cloud_config['project_id'], config.google_cloud_config['cloud_region'], config.google_cloud_config['registry_id'], config.google_cloud_config['device_id'], jwt)
+jwt = create_jwt(config.google_cloud_config['project_id'], config.jwt_config['private_key'], config.jwt_config['algorithm'], config.jwt_config['token_ttl'])
+client = get_mqtt_client(config.google_cloud_config['project_id'], config.google_cloud_config['cloud_region'], config.google_cloud_config['registry_id'], config.google_cloud_config['device_id'], jwt)
 
-# m5stack atom
-np = neopixel.NeoPixel(Pin(27), 25)
 epoch_offset = 946684800
+esp32.wake_on_ext0(pin = Pin(config.device_config["btn"], Pin.IN), level = esp32.WAKEUP_ALL_LOW)
 
+loop = 0
 while True:
-    timestamp = utime.time() + epoch_offset
-    bme_data = bme_sensor.measurements
-    psm_data = psm_sensor.measurements[1]
-    message = {
-        "device_id": config.google_cloud_config['device_id'],
-        "timestamp": timestamp,
-        "temp": bme_data["temp"],
-        "hum": bme_data["hum"],
-        "press": bme_data["press"],
-        "gas": bme_data["gas"],
-        "cpm10": psm_data["cpm10"],
-        "cpm25": psm_data["cpm25"],
-        "cpm100": psm_data["cpm100"],
-        "apm10": psm_data["apm10"],
-        "apm25": psm_data["apm25"],
-        "apm100": psm_data["apm100"]
-    }
-    print("Publishing message "+str(ujson.dumps(message)))
+    if loop < config.app_config["loops"]:
+        write_2leds(".", (5, 5, 5))
 
-    #mqtt_topic = '/devices/{}/{}'.format(config.google_cloud_config['device_id'], 'events')
-    #client.publish(mqtt_topic.encode('utf-8'), ujson.dumps(message).encode('utf-8'))
+        timestamp = utime.time() + epoch_offset
+        bme_data = bme_sensor.measurements
+        psm_data = psm_sensor.measurements[1]
+        message = {
+            "device_id": config.google_cloud_config['device_id'],
+            "timestamp": timestamp,
+            "temp": bme_data["temp"],
+            "hum": bme_data["hum"],
+            "press": bme_data["press"],
+            "gas": bme_data["gas"],
+            "cpm10": psm_data["cpm10"],
+            "cpm25": psm_data["cpm25"],
+            "cpm100": psm_data["cpm100"],
+            "apm10": psm_data["apm10"],
+            "apm25": psm_data["apm25"],
+            "apm100": psm_data["apm100"]
+        }
+        print("Publishing message "+str(ujson.dumps(message)))
+        write_2leds(".", (5, 0, 0))
+        mqtt_topic = '/devices/{}/{}'.format(config.google_cloud_config['device_id'], 'events')
+        client.publish(mqtt_topic.encode('utf-8'), ujson.dumps(message).encode('utf-8'))
 
-    #client.check_msg() # Check for new messages on subscription
-    utime.sleep(10)  # Delay for 10 seconds.
+        client.check_msg() # Check for new messages on subscription
+        write_2leds(" ", (5, 0, 0))
+        utime.sleep_ms(config.app_config["delay"])  # Delay for delay seconds.
+        loop += 1
+        gc.collect()
+    else:
+        write_2leds(":", (5, 5, 5))
+        print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
+        psm_sensor.power_off()
+        bme_sensor.power_off()
+        utime.sleep_ms(5000)
+        machine.deepsleep(config.app_config["deepsleepms"]) # Deep sleep to 
 
 
 

@@ -128,6 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# configuration
-boot.py
+# configuration & keys
 config.py
+*.pem

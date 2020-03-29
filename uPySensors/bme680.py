@@ -160,11 +160,12 @@ class BME680():
 
         self._load_calibration()
 
+        self.power_on()
+
         # Sensor settings
         self.tph_settings = TPHSettings()
         # Gas Sensor settings
         self.gas_settings = GasSettings()
-
         
         # Default oversampling and filter register values.
         self.tph_settings.os_pres = 0b011
@@ -190,7 +191,6 @@ class BME680():
 
         self._g_range = 0
         self._g_stable = 0
-    
 
         self._read_wait_ms = 100 
         self._new_read_ms = 200 
@@ -337,9 +337,6 @@ class BME680():
 
         if nb_profile > 9 or nb_profile < 0:
             raise ValueError("Profile '{}' should be between {} and {}".format(nb_profile, 0, 9)) 
-
-        #self._write(BME680_RES_HEAT_0 + nb_profile, 0x73)
-        #self._write(BME680_GAS_WAIT_0, 0x65)
 
         # set temperature
         self.gas_settings.heatr_temp = temperature

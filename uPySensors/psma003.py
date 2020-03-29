@@ -32,7 +32,7 @@ class psma003:
         ary = bytearray(normalcmd)
         self._uart.write(ary)
 
-    def sleep(self):
+    def power_off(self):
         self._set_idle()
         self._set(False)
         self._rst(False)

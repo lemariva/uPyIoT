@@ -13,8 +13,14 @@
 # limitations under the License.
 #
 # Configuration File
+
 device_config = {
-  'led_pin': 1
+    'set':25,
+    'rst':21,
+    'rx':23,
+    'tx':33,
+    'scl':22,
+    'sda':19,
 }
 
 wifi_config = {
