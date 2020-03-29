@@ -13,13 +13,14 @@ class psma003:
         self._set = machine.Pin(self._pins["set"], machine.Pin.OUT)
         self._rst = machine.Pin(self._pins["rst"], machine.Pin.OUT)
         self._uart.init(tx=self._pins["tx"], rx=self._pins["rx"])
+        self.power_off()
 
     def wake_up(self):
         self._set(True)
         self._rst(True)
         # sleep for 7 seconds to initialize the sensor properly
         utime.sleep_ms(2000)
-        #self._set_normal()
+        self._set_normal()
         utime.sleep_ms(5000)
 
     def _set_idle(self):
