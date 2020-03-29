@@ -19,9 +19,12 @@ class psma003:
         self._set(True)
         self._rst(True)
         # sleep for 7 seconds to initialize the sensor properly
-        utime.sleep_ms(2000)
         self._set_normal()
-        utime.sleep_ms(5000)
+        utime.sleep_ms(7000)
+        # warning init
+        for idx in range(10):
+            data = self.measurements
+            utime.sleep_ms(500)
 
     def _set_idle(self):
         idelcmd = b'\x42\x4d\xe4\x00\x00\x01\x73'
@@ -54,7 +57,6 @@ class psma003:
 
         if self._uart.read(1) == b'\x4D':
             self._wait_for_data(30)
-
             try:
                 self._data = self._uart.read(30)
                 if self._data:
