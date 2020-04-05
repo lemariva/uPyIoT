@@ -13,7 +13,7 @@ from third_party import rsa
 from umqtt.simple import MQTTClient
 from ubinascii import b2a_base64
 
-from uPySensors.psma003 import psma003
+from uPySensors.pmsa003 import PMSA003
 from uPySensors.bme680 import BME680
 import neopixel
 
@@ -23,7 +23,7 @@ device_i2c = -1
 
 np = neopixel.NeoPixel(Pin(27), 25)
 bme_sensor = BME680(device_i2c, config.device_config)
-psm_sensor = psma003(device_uart, config.device_config)
+pms_sensor = PMSA003(device_uart, config.device_config)
 
 def write_2leds(letter, color):
     rgb = color
@@ -86,9 +86,12 @@ client = get_mqtt_client(config.google_cloud_config['project_id'], config.google
 # sensor connection
 write_2leds(".", (0, 0, 5))
 bme_sensor.set_gas_heater_profile(320, 120, 0)
-psm_sensor.wake_up()
+pms_sensor.wake_up()
 esp32.wake_on_ext0(pin = Pin(config.device_config["btn"], Pin.IN), level = esp32.WAKEUP_ALL_LOW)
 
+if machine.reset_cause() == machine.DEEPSLEEP_RESET:
+    print('woke from a deep sleep')
+    
 # acquiring and sending data
 loop = 0
 while True:
@@ -97,7 +100,7 @@ while True:
         write_2leds(".", (5, 5, 5))
         timestamp = utime.time() + epoch_offset
         bme_data = bme_sensor.measurements
-        psm_data = psm_sensor.measurements[1]
+        pms_data = pms_sensor.measurements[1]
         message = {
             "device_id": config.google_cloud_config['device_id'],
             "timestamp": timestamp,
@@ -105,12 +108,12 @@ while True:
             "hum": bme_data["hum"],
             "press": bme_data["press"],
             "gas": bme_data["gas"],
-            "cpm10": psm_data["cpm10"],
-            "cpm25": psm_data["cpm25"],
-            "cpm100": psm_data["cpm100"],
-            "apm10": psm_data["apm10"],
-            "apm25": psm_data["apm25"],
-            "apm100": psm_data["apm100"]
+            "cpm10": pms_data["cpm10"],
+            "cpm25": pms_data["cpm25"],
+            "cpm100": pms_data["cpm100"],
+            "apm10": pms_data["apm10"],
+            "apm25": pms_data["apm25"],
+            "apm100": pms_data["apm100"]
         }
         #sending data
         print("Publishing message "+str(ujson.dumps(message)))
@@ -127,7 +130,7 @@ while True:
     else:
         write_2leds(":", (5, 5, 5))
         print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
-        psm_sensor.power_off()
+        pms_sensor.power_off()
         bme_sensor.power_off()
         utime.sleep_ms(5000)
         machine.deepsleep(config.app_config["deepsleepms"]) # Deep sleep to 
