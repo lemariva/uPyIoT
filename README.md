@@ -11,7 +11,7 @@ This code allows you to connect an M5Stack ATOM running MicroPython to the Googl
 * **BME680**: a gas sensor that integrates high-linearity and high-accuracy gas, pressure, humidity and temperature sensors. 
 * **PMSA003A**: a digital and universal particle concentration sensor, which can be used to obtain the number of suspended particles in the air, i.e. the concentration of particles, and output them to a digital interface.
 ## Tutorial
-Check out the link for a tutorial: https://lemariva.com/blog/2020/04/micropython-google-cloud-platform-getting-data-m5stack-atom-sensing-air-quality
+Check out the tutorial: [MicroPython: Google Cloud Platform getting data from an M5Stack ATOM sensing the air-quality](https://lemariva.com/blog/2020/04/micropython-google-cloud-platform-getting-data-m5stack-atom-sensing-air-quality)
 ## Video
 Check out the video:
 
