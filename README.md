@@ -10,7 +10,8 @@ Spring in Europe has already started and many people are having allergy problems
 This code allows you to connect an M5Stack ATOM running MicroPython to the Google Cloud Platform (GCP) to collect air-quality variables obtained from reading two sensors:
 * **BME680**: a gas sensor that integrates high-linearity and high-accuracy gas, pressure, humidity and temperature sensors. 
 * **PMSA003A**: a digital and universal particle concentration sensor, which can be used to obtain the number of suspended particles in the air, i.e. the concentration of particles, and output them to a digital interface.
-
+## Tutorial
+Check out the link for a tutorial: https://lemariva.com/blog/2020/04/micropython-google-cloud-platform-getting-data-m5stack-atom-sensing-air-quality
 ## Video
 Check out the video:
 
