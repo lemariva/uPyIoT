@@ -23,6 +23,12 @@ device_config = {
     'sda':19,
 }
 
+app_config = {
+    'loops': 10,
+    'delay': 15000,
+    'deepsleepms': 600000,
+}
+
 wifi_config = {
     'ssid':'',
     'password':''
