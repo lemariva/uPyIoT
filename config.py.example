@@ -27,7 +27,7 @@ app_config = {
     'deepsleep': False,
     'loops': 10,
     'delay': 30000,
-    'deepsleepms': 100000,
+    'deepsleepms': 600000,
 }
 
 wifi_config = {
