@@ -1,3 +1,19 @@
+"""
+Copyright 2020 LeMaRiva|Tech (Mauro Riva) info@lemariva.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import ntptime
 import ujson
 import utime
@@ -95,6 +111,7 @@ if machine.reset_cause() == machine.DEEPSLEEP_RESET:
 # acquiring and sending data
 loop = 0
 while True:
+    machine.freq(160000000)
     if loop < config.app_config["loops"]:
         # acquiring data
         write_2leds(".", (5, 5, 5))
@@ -132,8 +149,10 @@ while True:
         print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
         pms_sensor.power_off()
         bme_sensor.power_off()
-        utime.sleep_ms(5000)
-        machine.deepsleep(config.app_config["deepsleepms"]) # Deep sleep to 
+        machine.freq(80000000)
+        utime.sleep_ms(config.app_config["deepsleepms"])
+        #utime.sleep_ms(5000)
+        #machine.deepsleep(config.app_config["deepsleepms"]) # Deep sleep to 
 
 
 
