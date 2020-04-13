@@ -13,7 +13,6 @@
 # limitations under the License.
 #
 # Configuration File
-
 device_config = {
     'set':25,
     'rst':21,
@@ -21,12 +20,14 @@ device_config = {
     'tx':33,
     'scl':22,
     'sda':19,
+    'btn':39,
 }
 
 app_config = {
+    'deepsleep': False,
     'loops': 10,
-    'delay': 15000,
-    'deepsleepms': 600000,
+    'delay': 30000,
+    'deepsleepms': 100000,
 }
 
 wifi_config = {

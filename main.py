@@ -21,6 +21,7 @@ import config
 import machine
 import gc
 import esp32
+import network
 from machine import UART, I2C, Pin
 from letters import characters
 
@@ -36,6 +37,7 @@ import neopixel
 epoch_offset = 946684800
 device_uart = UART(1, baudrate=9600)
 device_i2c = -1
+sta_if = network.WLAN(network.STA_IF)
 
 np = neopixel.NeoPixel(Pin(27), 25)
 bme_sensor = BME680(device_i2c, config.device_config)
@@ -94,25 +96,27 @@ def get_mqtt_client(project_id, cloud_region, registry_id, device_id, jwt):
     client.subscribe('/devices/{}/commands/#'.format(device_id), 1)
     return client
 
-# cloud connection
-write_2leds(".", (0, 5, 0))
-jwt = create_jwt(config.google_cloud_config['project_id'], config.jwt_config['private_key'], config.jwt_config['algorithm'], config.jwt_config['token_ttl'])
-client = get_mqtt_client(config.google_cloud_config['project_id'], config.google_cloud_config['cloud_region'], config.google_cloud_config['registry_id'], config.google_cloud_config['device_id'], jwt)
+def main():
+    if config.app_config["deepsleep"]:
+        esp32.wake_on_ext0(pin = Pin(config.device_config["btn"], Pin.IN), level = esp32.WAKEUP_ALL_LOW)
+        if machine.reset_cause() == machine.DEEPSLEEP_RESET:
+            print('esp32 has been woken from a deep sleep')
+        
+    # cloud connection
+    write_2leds(".", (0, 5, 0))
+    jwt = create_jwt(config.google_cloud_config['project_id'], config.jwt_config['private_key'], config.jwt_config['algorithm'], config.jwt_config['token_ttl'])
+    client = get_mqtt_client(config.google_cloud_config['project_id'], config.google_cloud_config['cloud_region'], config.google_cloud_config['registry_id'], config.google_cloud_config['device_id'], jwt)
 
-# sensor connection
-write_2leds(".", (0, 0, 5))
-bme_sensor.set_gas_heater_profile(320, 120, 0)
-pms_sensor.wake_up()
-esp32.wake_on_ext0(pin = Pin(config.device_config["btn"], Pin.IN), level = esp32.WAKEUP_ALL_LOW)
+    # sensor connection
+    write_2leds(".", (0, 0, 5))
+    bme_sensor.set_gas_heater_profile(320, 120, 0)
+    pms_sensor.wake_up()
 
-if machine.reset_cause() == machine.DEEPSLEEP_RESET:
-    print('woke from a deep sleep')
-    
-# acquiring and sending data
-loop = 0
-while True:
-    machine.freq(160000000)
-    if loop < config.app_config["loops"]:
+    # acquiring and sending data
+    loop = 0
+    while True:
+        machine.freq(160000000)
+
         # acquiring data
         write_2leds(".", (5, 5, 5))
         timestamp = utime.time() + epoch_offset
@@ -144,15 +148,27 @@ while True:
         write_2leds(" ", (0, 0, 0))
         utime.sleep_ms(config.app_config["delay"])  # Delay for delay seconds.
         loop += 1
-    else:
-        write_2leds(":", (5, 5, 5))
-        print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
-        pms_sensor.power_off()
-        bme_sensor.power_off()
-        machine.freq(80000000)
-        utime.sleep_ms(config.app_config["deepsleepms"])
-        #utime.sleep_ms(5000)
-        #machine.deepsleep(config.app_config["deepsleepms"]) # Deep sleep to 
 
+        if loop >= config.app_config["loops"]:
+            loop = 0
+            write_2leds(":", (2, 2, 2))
+            print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
+            pms_sensor.power_off()
+            bme_sensor.power_off()
 
+            if config.app_config["deepsleep"]:
+                utime.sleep_ms(1000)
+                machine.deepsleep(config.app_config["deepsleepms"])
+            else:
+                sta_if.active(False)
+                machine.freq(20000000)
+                utime.sleep_ms(config.app_config["deepsleepms"])
+                machine.reset()
 
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        raise
+    except:
+        machine.reset()

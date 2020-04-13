@@ -18,7 +18,7 @@ def do_connect():
         sta_if.connect(config.wifi_config["ssid"], config.wifi_config["password"])
         while not sta_if.isconnected() and \
             not timed_out:        
-            if utime.time() - start >= 10:
+            if utime.time() - start >= 20:
                 timed_out = True
             else:
                 pass
