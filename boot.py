@@ -3,6 +3,7 @@ import config
 import network
 import utime
 import ntptime
+import gc
 
 ## ftp access
 #from ftp import ftpserver
@@ -30,3 +31,4 @@ def do_connect():
         print('internet not available')
 
 do_connect()
+gc.collect()

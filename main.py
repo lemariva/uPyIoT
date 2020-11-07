@@ -13,8 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-import ntptime
 import ujson
 import utime
 import config
@@ -22,9 +20,9 @@ import machine
 import gc
 import esp32
 import network
-from machine import UART, I2C, Pin
-from letters import characters
+import neopixel
 
+from letters import characters
 from third_party import string
 from third_party import rsa
 from umqtt.simple import MQTTClient
@@ -32,14 +30,14 @@ from ubinascii import b2a_base64
 
 from uPySensors.pmsa003 import PMSA003
 from uPySensors.bme680 import BME680
-import neopixel
+
 
 epoch_offset = 946684800
-device_uart = UART(1, baudrate=9600)
+device_uart = machine.UART(1, baudrate=9600)
 device_i2c = -1
 sta_if = network.WLAN(network.STA_IF)
 
-np = neopixel.NeoPixel(Pin(27), 25)
+np = neopixel.NeoPixel(machine.Pin(27), 25)
 bme_sensor = BME680(device_i2c, config.device_config)
 pms_sensor = PMSA003(device_uart, config.device_config)
 
@@ -98,7 +96,7 @@ def get_mqtt_client(project_id, cloud_region, registry_id, device_id, jwt):
 
 def main():
     if config.app_config["deepsleep"]:
-        esp32.wake_on_ext0(pin = Pin(config.device_config["btn"], Pin.IN), level = esp32.WAKEUP_ALL_LOW)
+        esp32.wake_on_ext0(pin = machine.Pin(config.device_config["btn"], machine.Pin.IN), level = esp32.WAKEUP_ALL_LOW)
         if machine.reset_cause() == machine.DEEPSLEEP_RESET:
             print('esp32 has been woken from a deep sleep')
         
@@ -106,7 +104,8 @@ def main():
     write_2leds(".", (0, 5, 0))
     jwt = create_jwt(config.google_cloud_config['project_id'], config.jwt_config['private_key'], config.jwt_config['algorithm'], config.jwt_config['token_ttl'])
     client = get_mqtt_client(config.google_cloud_config['project_id'], config.google_cloud_config['cloud_region'], config.google_cloud_config['registry_id'], config.google_cloud_config['device_id'], jwt)
-
+    gc.collect()
+    
     # sensor connection
     write_2leds(".", (0, 0, 5))
     bme_sensor.set_gas_heater_profile(320, 120, 0)
@@ -151,7 +150,7 @@ def main():
 
         if loop >= config.app_config["loops"]:
             loop = 0
-            write_2leds(":", (2, 2, 2))
+            write_2leds(".", (1, 1, 1))
             print("Going to sleep for about %s milliseconds!" % config.app_config["deepsleepms"])
             pms_sensor.power_off()
             bme_sensor.power_off()
